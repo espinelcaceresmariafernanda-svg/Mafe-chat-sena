@@ -14,8 +14,6 @@ $(function(){
 
     $nickForm.submit( e => {
         e.preventDefault();
-
-        // Limpieza: no permitir nombres vacíos o solo espacios
         const nick = $nickname.val().trim();
         if(nick === ''){
             $nickError.html('<div class="alert alert-warning">El nombre no puede estar vacío.</div>');
@@ -36,44 +34,24 @@ $(function(){
 
     $messageForm.submit( e => {
         e.preventDefault();
-
-        // Limpieza: no enviar mensajes vacíos o solo espacios
         const msg = $messageBox.val().trim();
         if(msg === '') return;
 
-        socket.emit('Enviar mensaje', msg);
+        // Enviamos el mensaje y añadimos una función para recibir errores (como "usuario no existe")
+        socket.emit('Enviar mensaje', msg, data => {
+            $chat.append(`<div class="msg-system text-danger"><em>${data}</em></div>`);
+            $chat.scrollTop($chat[0].scrollHeight);
+        });
         $messageBox.val('');
     });
 
-    // Formato de mensajes: propios vs ajenos con estilos distintos
     socket.on('Nuevo mensaje', function (data){
         const isMe = data.nick === myNickname;
         const msgHtml = isMe
             ? `<div class="msg msg-me"><span class="msg-nick">Tú</span> ${data.msg}</div>`
             : `<div class="msg msg-other"><span class="msg-nick">${data.nick}</span> ${data.msg}</div>`;
         $chat.append(msgHtml);
-        // Auto-scroll al último mensaje
         $chat.scrollTop($chat[0].scrollHeight);
     });
 
-    // Notificación de conexión de nuevo usuario
-    socket.on('usuario conectado', function(nick){
-        $chat.append(`<div class="msg-system"> <em>${nick} se ha unido al chat</em></div>`);
-        $chat.scrollTop($chat[0].scrollHeight);
-    });
-
-    // Notificación de desconexión
-    socket.on('usuario desconectado', function(nick){
-        $chat.append(`<div class="msg-system"> <em>${nick} ha salido del chat</em></div>`);
-        $chat.scrollTop($chat[0].scrollHeight);
-    });
-
-    socket.on('usernames', data => {
-        let html = '';
-        for(let i = 0; i < data.length; i++){
-            const esYo = data[i] === myNickname ? ' <span class="badge bg-warning text-dark">Tú</span>' : '';
-            html += `<p><i class="fas fa-user"></i> ${data[i]}${esYo}</p>`;
-        }
-        $users.html(html);
-    });
-});
+    // === AQUÍ ESTÁ EL ARREGLO PARA LOS MENSAJES PRIV
