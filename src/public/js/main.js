@@ -1,4 +1,4 @@
-$(function(){
+$(function()
     const socket = io();
 
     const $messageForm = $('#message-form');
